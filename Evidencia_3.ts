@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 const readline = require("readline-sync");
 
+
 async function main() {
     // Setting default values to connecting to Mongo DB 
     const url: string = "mongodb://localhost:27017";
@@ -136,6 +137,7 @@ async function main() {
 
                 // Changes the main collection to search all the ingredients
                 myCollection = myDatabase.collection(`Ingredientes`);
+
                 result = await myCollection.find({ _id: { $in: ingredientes } }).toArray();
                 break;
             default:
@@ -227,7 +229,7 @@ async function main() {
             
             // Finds the document and retrieves its id 
             const document = await myCollection.find({nombre: documentToDelete}).toArray();
-            const id = document[0]._id;
+            const id = document[0]._id.toString();
 
             // Deletes the document inside of 'Ingredientes' with the previous id
             await myCollection.deleteOne({_id: id});
@@ -236,7 +238,7 @@ async function main() {
             myCollection = myDatabase.collection(collection);
 
             // Deletes the field with the id of all the 'Ingredientes' array inside of each document in 'Recetas' collection 
-            myCollection.UpdateMany({}, {$pull: {ingredientes: {'_id.$oid': id}}});
+            await myCollection.updateMany({}, {$pull: {ingredientes: {'_id.$oid': id}}});
         }
     }
 
@@ -250,18 +252,3 @@ async function main() {
 
 // Calling the app main
 main();
-
-
-
-// for(let document of result){
-//     console.log(document._id);
-//     console.log(document.nombre);
-//     console.log(document.categoria);
-//     console.log(document.dificultad);
-//     for(let ingrediente of document.ingredientes){
-//         console.log(ingrediente._id);
-//         console.log(ingrediente.cantidad);
-//     }
-//     console.log(document.pasos);
-//     console.log(document.calificacion);
-// }
