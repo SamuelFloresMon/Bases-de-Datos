@@ -54,6 +54,7 @@ async function main() {
             console.log(`1. Buscar recetas o ingredientes`);
             console.log(`2. Actualizar informacion del recetario o los ingredientes`);
             console.log(`3. Eliminar recetas o ingredientes`);
+            console.log(`4. Marcar como hecha una receta`);
             let choice: number = parseInt(readline.question("Elige la opcion que desees: "));
 
             console.log(`\n`);
@@ -67,6 +68,9 @@ async function main() {
                     break;
                 case 3:
                     await deleteDocument(client);
+                    break;
+                case 4: 
+                    await reduceStock(client);
                     break;
                 default:
                     console.log(`Esta opcion no esta disponible`);
@@ -239,6 +243,30 @@ async function main() {
 
             // Deletes the field with the id of all the 'Ingredientes' array inside of each document in 'Recetas' collection 
             await myCollection.updateMany({}, {$pull: {ingredientes: {'_id.$oid': id}}});
+        }
+    }
+
+    async function reduceStock(client: any){
+        const myDatabase: any = client.db(database); 
+        let myCollection: any = myDatabase.collection(collection);
+
+        const recipe = readline.question(`Escribe el nombre de la receta que fue hecha: `);
+        let result = await myCollection.find({ nombre: recipe }).toArray();
+
+        myCollection = myDatabase.collection('Ingredientes');
+        let id: string;
+        const ingredientes: string[] = [];
+        let ingredient;
+
+        for(let document of result){
+            for(let ingredienteEnReceta of document.ingredientes){
+                id = ingredienteEnReceta._id.$oid;
+                ingredient = await myCollection.find({_id: new ObjectId(id)}).toArray();
+                ingredient = ingredient[0];
+                ingredient.stock = +(ingredient.stock-1);
+
+                await myCollection.updateOne({_id: new ObjectId(id)}, {$set: ingredient});
+            }
         }
     }
 

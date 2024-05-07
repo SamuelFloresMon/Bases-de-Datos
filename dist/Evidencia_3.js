@@ -43,6 +43,7 @@ async function main() {
             console.log(`1. Buscar recetas o ingredientes`);
             console.log(`2. Actualizar informacion del recetario o los ingredientes`);
             console.log(`3. Eliminar recetas o ingredientes`);
+            console.log(`4. Marcar como hecha una receta`);
             let choice = parseInt(readline.question("Elige la opcion que desees: "));
             console.log(`\n`);
             switch (choice) {
@@ -54,6 +55,9 @@ async function main() {
                     break;
                 case 3:
                     await deleteDocument(client);
+                    break;
+                case 4:
+                    await reduceStock(client);
                     break;
                 default:
                     console.log(`Esta opcion no esta disponible`);
@@ -116,14 +120,6 @@ async function main() {
                 }
                 // Changes the main collection to search all the ingredients
                 myCollection = myDatabase.collection(`Ingredientes`);
-                // await myCollection.insertOne({
-                //     "_id": new ObjectId("663719622086a43bed1542dc"),
-                //     "nombre": "Pimienta",
-                //     "categoria": "Condimento",
-                //     "descripcion": "Añade un toque de pocante a los platos",
-                //     "stock": 95,
-                //     "peso": 100
-                // });
                 result = await myCollection.find({ _id: { $in: ingredientes } }).toArray();
                 break;
             default:
@@ -208,11 +204,30 @@ async function main() {
             const document = await myCollection.find({ nombre: documentToDelete }).toArray();
             const id = document[0]._id.toString();
             // Deletes the document inside of 'Ingredientes' with the previous id
-            // await myCollection.deleteOne({_id: id});
+            await myCollection.deleteOne({ _id: id });
             // Changes the collection to the default 
             myCollection = myDatabase.collection(collection);
             // Deletes the field with the id of all the 'Ingredientes' array inside of each document in 'Recetas' collection 
-            console.log(await myCollection.updateMany({}, { $pull: { ingredientes: { '_id.$oid': id } } }));
+            await myCollection.updateMany({}, { $pull: { ingredientes: { '_id.$oid': id } } });
+        }
+    }
+    async function reduceStock(client) {
+        const myDatabase = client.db(database);
+        let myCollection = myDatabase.collection(collection);
+        const recipe = readline.question(`Escribe el nombre de la receta que fue hecha: `);
+        let result = await myCollection.find({ nombre: recipe }).toArray();
+        myCollection = myDatabase.collection('Ingredientes');
+        let id;
+        const ingredientes = [];
+        let ingredient;
+        for (let document of result) {
+            for (let ingredienteEnReceta of document.ingredientes) {
+                id = ingredienteEnReceta._id.$oid;
+                ingredient = await myCollection.find({ _id: new ObjectId(id) }).toArray();
+                ingredient = ingredient[0];
+                ingredient.stock = +(ingredient.stock - 1);
+                await myCollection.updateOne({ _id: new ObjectId(id) }, { $set: ingredient });
+            }
         }
     }
     // Calling the functions
