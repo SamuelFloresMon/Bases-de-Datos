@@ -204,7 +204,8 @@ async function main() {
             const document = await myCollection.find({ nombre: documentToDelete }).toArray();
             const id = document[0]._id.toString();
             // Deletes the document inside of 'Ingredientes' with the previous id
-            await myCollection.deleteOne({ _id: id });
+            const a = await myCollection.deleteOne({ _id: new ObjectId(id) });
+            console.log(a);
             // Changes the collection to the default 
             myCollection = myDatabase.collection(collection);
             // Deletes the field with the id of all the 'Ingredientes' array inside of each document in 'Recetas' collection 

@@ -236,7 +236,7 @@ async function main() {
             const id = document[0]._id.toString();
 
             // Deletes the document inside of 'Ingredientes' with the previous id
-            await myCollection.deleteOne({_id: id});
+            const a = await myCollection.deleteOne({_id: new ObjectId(id)});
 
             // Changes the collection to the default 
             myCollection = myDatabase.collection(collection);
